@@ -1,0 +1,6 @@
+data/
+*.pth
+*.jpg
+*.png
+*.csv
+weights/
