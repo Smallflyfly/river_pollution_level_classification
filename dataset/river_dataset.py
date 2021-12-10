@@ -6,7 +6,9 @@
 '''
 import os
 
+import cv2
 import pandas
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms
@@ -26,7 +28,6 @@ class RiverDataset(Dataset):
             transforms.RandomHorizontalFlip(),
             transforms.RandomRotation(30),
             transforms.ToTensor(),
-            transforms.Resize((image_size, image_size)),
             transforms.Normalize([0.51231626, 0.54201973, 0.41985212], [0.23131444, 0.22577731, 0.24543156])
         ])
 
@@ -56,6 +57,21 @@ class RiverDataset(Dataset):
     def __getitem__(self, index):
         image = self.train_images[index]
         label = self.train_labels[index]
-        im = Image.open(image)
+        im = cv2.imread(image)
+        h, w, _ = im.shape
+        r = self.image_size / w if w > h else self.image_size / h
+        w_ = int(r * w)
+        h_ = int(r * h)
+        new_im = np.full((self.image_size, self.image_size, 3), 114, dtype=np.uint8)
+        im = cv2.resize(im, (w_, h_))
+        px = (self.image_size - w_) // 2
+        py = (self.image_size - h_) // 2
+        new_im[py:py + h_, px:px + w_, :] = im[:, :, :]
+
+        # cv2.imshow("image", new_im)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        im = Image.fromarray(cv2.cvtColor(new_im, cv2.COLOR_BGR2RGB))
         im = self.transforms(im)
         return im, label
